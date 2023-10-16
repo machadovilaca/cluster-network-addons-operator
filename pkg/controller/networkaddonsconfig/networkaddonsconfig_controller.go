@@ -39,7 +39,7 @@ import (
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/apply"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/controller/statusmanager"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/eventemitter"
-	"github.com/kubevirt/cluster-network-addons-operator/pkg/monitoring"
+	"github.com/kubevirt/cluster-network-addons-operator/pkg/monitoring/metrics"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/names"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/network"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/util/k8s"
@@ -221,7 +221,7 @@ func (r *ReconcileNetworkAddonsConfig) Reconcile(ctx context.Context, request re
 			r.stopTrackingObjects()
 
 			if r.clusterInfo.MonitoringAvailable {
-				monitoring.ResetMonitoredComponents()
+				metrics.ResetMonitoredComponents()
 			}
 
 			// Owned objects are automatically garbage collected. Return and don't requeue
@@ -313,7 +313,7 @@ func (r *ReconcileNetworkAddonsConfig) Reconcile(ctx context.Context, request re
 	r.statusManager.SetFromPods()
 
 	if r.clusterInfo.MonitoringAvailable {
-		monitoring.TrackMonitoredComponents(&networkAddonsConfig.Spec, r.statusManager)
+		metrics.TrackMonitoredComponents(&networkAddonsConfig.Spec, r.statusManager)
 	}
 
 	// Kubernetes sometimes fails to apply objects while we remove and recreate
