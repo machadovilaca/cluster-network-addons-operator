@@ -216,6 +216,7 @@ generate-doc:
 
 lint-metrics:
 	./hack/prom_metric_linter.sh --operator-name="kubevirt" --sub-operator-name="cnao"
+	go run ./tools/prom_rules_linter
 
 
 .PHONY: \
