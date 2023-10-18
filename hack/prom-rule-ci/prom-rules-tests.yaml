@@ -18,6 +18,7 @@ tests:
         exp_alerts:
           - exp_annotations:
               summary: "CNAO pod is down."
+              description: "The total count of running CNAO operators is 0 (zero) for more than 5 minutes."
               runbook_url: "https://kubevirt.io/monitoring/runbooks/CnaoDown"
             exp_labels:
               severity: "warning"
@@ -51,6 +52,7 @@ tests:
         exp_alerts:
           - exp_annotations:
               summary: "CNAO CR NetworkAddonsConfig is not ready."
+              description: "There is no CNAO CR ready for more than 5 minutes."
               runbook_url: "https://kubevirt.io/monitoring/runbooks/NetworkAddonsConfigNotReady"
             exp_labels:
               severity: "warning"
@@ -87,6 +89,7 @@ tests:
         exp_alerts:
           - exp_annotations:
               summary: "Duplicate macs found."
+              description: "There are 1 duplicate KubeMacPool MAC addresses."
               runbook_url: "https://kubevirt.io/monitoring/runbooks/KubeMacPoolDuplicateMacsFound"
             exp_labels:
               severity: "warning"
@@ -121,6 +124,7 @@ tests:
         exp_alerts:
           - exp_annotations:
               summary: "KubeMacpool is deployed by CNAO CR but KubeMacpool pod is down."
+              description: "The total count of running KubeMacPool manager pods is 0 (zero) for more than 5 minutes."
               runbook_url: "https://kubevirt.io/monitoring/runbooks/KubemacpoolDown"
             exp_labels:
               severity: "critical"
