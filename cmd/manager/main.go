@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/machadovilaca/operator-observability/pkg/operatormetrics"
 	"log"
 	"os"
 	"runtime"
 
+	"github.com/machadovilaca/operator-observability/pkg/operatormetrics"
 	osv1 "github.com/openshift/api/operator/v1"
 	"github.com/spf13/pflag"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
@@ -22,6 +22,7 @@ import (
 	cnaov1alpha1 "github.com/kubevirt/cluster-network-addons-operator/pkg/apis/networkaddonsoperator/v1alpha1"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/controller"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/monitoring/metrics"
+	"github.com/kubevirt/cluster-network-addons-operator/pkg/monitoring/rules"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/util/k8s"
 )
 
@@ -80,6 +81,11 @@ func main() {
 	err = metrics.SetupMetrics()
 	if err != nil {
 		log.Printf("failed to setup metrics: %v", err)
+		os.Exit(1)
+	}
+	err = rules.SetupRules()
+	if err != nil {
+		log.Printf("failed to setup rules: %v", err)
 		os.Exit(1)
 	}
 

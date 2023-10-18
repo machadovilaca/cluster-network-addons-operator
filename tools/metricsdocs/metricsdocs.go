@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kubevirt/cluster-network-addons-operator/pkg/monitoring/rules"
 
 	"github.com/machadovilaca/operator-observability/pkg/docs"
 
@@ -35,11 +36,15 @@ this document.
 `
 
 func main() {
-	err := metrics.SetupMetrics()
+	mustSucceed(metrics.SetupMetrics())
+	mustSucceed(rules.SetupRules())
+
+	docsString := docs.BuildMetricsDocsWithCustomTemplate(metrics.ListMetrics(), rules.ListRecordingRules(), tpl)
+	fmt.Print(docsString)
+}
+
+func mustSucceed(err error) {
 	if err != nil {
 		panic(err)
 	}
-
-	docsString := docs.BuildMetricsDocsWithCustomTemplate(metrics.ListMetrics(), nil, tpl)
-	fmt.Print(docsString)
 }

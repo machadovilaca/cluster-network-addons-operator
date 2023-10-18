@@ -3,22 +3,18 @@ package monitoring
 import (
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/kubevirt/cluster-network-addons-operator/pkg/monitoring/rules"
 	"github.com/kubevirt/cluster-network-addons-operator/pkg/render"
 )
 
 const (
-	defaultMetricPort          = 8080
-	defaultMonitoringNamespace = "monitoring"
 	defaultServiceAccountName  = "prometheus-k8s"
-	defaultRunbookURLTemplate  = "https://kubevirt.io/monitoring/runbooks/"
-	runbookURLTemplateEnv      = "RUNBOOK_URL_TEMPLATE"
+	defaultMonitoringNamespace = "monitoring"
 )
 
 func RenderMonitoring(manifestDir string, monitoringAvailable bool) ([]*unstructured.Unstructured, error) {
@@ -28,35 +24,31 @@ func RenderMonitoring(manifestDir string, monitoringAvailable bool) ([]*unstruct
 
 	// render the manifests on disk
 	data := render.MakeRenderData()
-	data.Data["Namespace"] = os.Getenv("OPERAND_NAMESPACE")
-	data.Data["MonitoringNamespace"] = getNamespace()
+	data.Data["Namespace"] = rules.GetOperandNamespace()
+	data.Data["MonitoringNamespace"] = GetMonitoringNamespace()
 	data.Data["MonitoringServiceAccount"] = getServiceAccount()
-	data.Data["RunbookURLTemplate"] = GetRunbookURLTemplate()
 
 	objs, err := render.RenderDir(filepath.Join(manifestDir, "monitoring"), &data)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render monitoring manifests")
 	}
 
+	promRule, err := rules.BuildPrometheusRule()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to build PrometheusRule")
+	}
+
+	unstructuredObj, err := convertToUnstructured(promRule)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert PrometheusRule to Unstructured")
+	}
+
+	objs = append(objs, unstructuredObj)
+
 	return objs, nil
 }
 
-func GetMetricsAddress() string {
-	return metrics.DefaultBindAddress
-}
-
-func GetMetricsPort() int32 {
-	re := regexp.MustCompile(`(?m).*:(\d+)`)
-
-	portString := re.ReplaceAllString(metrics.DefaultBindAddress, "$1")
-	portInt64, err := strconv.ParseUint(portString, 10, 32)
-	if err != nil {
-		return defaultMetricPort
-	}
-	return int32(portInt64)
-}
-
-func getNamespace() string {
+func GetMonitoringNamespace() string {
 	monitoringNamespaceFromEnv := os.Getenv("MONITORING_NAMESPACE")
 
 	if monitoringNamespaceFromEnv != "" {
@@ -74,11 +66,14 @@ func getServiceAccount() string {
 	return defaultServiceAccountName
 }
 
-func GetRunbookURLTemplate() string {
-	runbookURLTemplate, exists := os.LookupEnv(runbookURLTemplateEnv)
-	if !exists {
-		runbookURLTemplate = defaultRunbookURLTemplate
+func convertToUnstructured(obj interface{}) (*unstructured.Unstructured, error) {
+	runtimeObject, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, err
 	}
 
-	return runbookURLTemplate
+	unstrObj := &unstructured.Unstructured{}
+	unstrObj.SetUnstructuredContent(runtimeObject)
+
+	return unstrObj, nil
 }
